@@ -1,0 +1,7 @@
+#
+#__init__.py is automatically generated from __init__.py.in, DO NOT EDIT __init__.py
+#
+
+__all__ = ('lfricflux',)
+
+from .lfricflux import LFRicFlux

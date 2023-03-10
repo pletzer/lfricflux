@@ -29,10 +29,45 @@ class LFRicFlux(object):
         self.rho_u_dz = self.rho_edge * self.u * dz
         self.rho_v_dz = self.rho_edge * self.v * dz
 
+        # store the locations of the mid-edge positions
+        self.xEdge = mint.NcFieldRead(fileName, f'{meshName}_edge_x').data()
+        self.yEdge = mint.NcFieldRead(fileName, f'{meshName}_edge_y').data()
+
 
 
     def saveFlowVTK(self, fileName):
-        raise NotImplementedError('this method has not yet been implemented')
+        
+        import vtk
+        pointCoordArray = vtk.vtkDoubleArray()
+        pointCoordArray.SetNumberOfComponents(3)
+        pointCoordArray.SetNumberOfTuples(self.nedges)
+        pointCoords = vtk.vtkPoints()
+        pointMesh = vtk.vtkUnstructuredGrid()
+        pointMeshWriter = vtk.vtkUnstructuredGridWriter()
+
+        pointCoords.SetData(pointCoordArray)
+        pointMesh.SetPoints(pointCoords)
+        pointMesh.AllocateExact(self.nedges)
+        pointMeshWriter.SetInputData(pointMesh)
+        pointMeshWriter.SetFileName(fileName)
+
+        ptIds = vtk.vtkIdList()
+        ptIds.SetNumberOfIds(1)
+        for i in range(self.nedges):
+            pointCoordArray.SetTuple(i, (self.xEdge[i], self.yEdge[i], 0.))
+            ptIds.SetId(0, i)
+            pointMesh.InsertNextCell(vtk.VTK_VERTEX, ptIds)
+
+        # need to attach the u, v fields
+        rhoVelocity = vtk.vtkDoubleArray()
+        rhoVelocity.SetNumberOfComponents(3)
+        rhoVelocity.SetNumberOfTuples(self.nedges)
+        rhoVelocity.SetName('rho_velocity')
+        vxyz = numpy.zeros((self.nedges, 3), numpy.float64)
+        vxyz[:, 0] = self.xEdge
+        vxyz[:, 1] = self.yEdge
+        rhoVelocity.SetZVoidArray(vxyz, 3*self.nedge, 1)
+        pointMesh.GetPointData().AddArray(rhoVelocity)
 
 
     def computeFlow(self, xy):

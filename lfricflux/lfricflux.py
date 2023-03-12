@@ -70,17 +70,14 @@ class LFRicFlux(object):
         pointMesh.GetPointData().AddArray(rhoVelocity)
 
         extra_dims = self.rho_u_dz.shape[:-1]
-        print(f'*** extra_dims = {extra_dims}')
         mai = mint.MultiArrayIter(extra_dims)
         mai.begin()
         for _ in range(mai.getNumIters()):
             inds = tuple(mai.getIndices())
             slab = inds + (slice(None, None),)
-            print(f'--- slab = {slab}')
             vxyz[:, 0] = self.rho_u_dz[slab]
             vxyz[:, 1] = self.rho_v_dz[slab]
             fn = fileName.split('.')[0] + '_' + '_'.join([f'{idx}' for idx in inds]) + '.vtk'
-            print(f'fn = {fn}')
             pointMeshWriter.SetFileName(fn)
             pointMeshWriter.Update()
             mai.next()

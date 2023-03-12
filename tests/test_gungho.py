@@ -9,3 +9,4 @@ def test1():
 	lf = lfricflux.LFRicFlux(fileName=fn, meshName=mesh,)
 	flow = lf.computeFlow(xy=[(0., -90.), (0., 90.)])
 	lf.saveFlowVTK('flow.vtk')
+	assert 0 == 1

@@ -4,11 +4,11 @@ import numpy
 class LFRicFlux(object):
 
 
-    def __init__(self, fileName, meshName, uName='u_in_w2', vName='v_in_w2', rhoName='rho', dz=1000.0):
+    def __init__(self, fileName, meshName, uName='u_in_w2h', vName='v_in_w2h', rhoName='rho', dz=1000.0):
         
         # build the mesh
         self.grid = mint.Grid()
-        self.grid.setFlags((1, 1, 1))
+        self.grid.setFlags(1, 1, 1)
         self.grid.loadFromUgrid2DFile(f'{fileName}${meshName}')
 
         # read the velocity fields on edges
@@ -16,11 +16,13 @@ class LFRicFlux(object):
         self.v = mint.NcFieldRead(fileName, vName).data()
 
         # read the cell centred density 
-        self.rho_w3 = mint.NcFieldRead(fileName, rhoName).data()
+        rho_w3 = mint.NcFieldRead(fileName, rhoName).data()
 
         # compute the density one edges
-        edge2face = np.array(mint.NcFieldRead(fileName, f'{meshName}_edge_face_links').data(), dtype=int)
-        self.nedges = self.getNumberOfEdges()
+        edge2face = numpy.array(mint.NcFieldRead(fileName, f'{meshName}_edge_face_links').data(), dtype=int)
+        # number of edges is assumed to be the last dimension
+        self.nedges = self.u.shape[-1]
+        self.rho_edge = numpy.empty(rho_w3.shape[:-1] + (self.nedges,), numpy.float64)
         for i in range(self.nedges):
             faceid1, faceid2 = edge2face[i,:]
             self.rho_edge[..., i] = 0.5*(rho_w3[..., faceid1] + rho_w3[..., faceid2])
@@ -47,9 +49,9 @@ class LFRicFlux(object):
 
         pointCoords.SetData(pointCoordArray)
         pointMesh.SetPoints(pointCoords)
-        pointMesh.AllocateExact(self.nedges)
+        # unstructured grid is a cloud of points
+        pointMesh.AllocateExact(self.nedges, 1)
         pointMeshWriter.SetInputData(pointMesh)
-        pointMeshWriter.SetFileName(fileName)
 
         ptIds = vtk.vtkIdList()
         ptIds.SetNumberOfIds(1)
@@ -64,10 +66,20 @@ class LFRicFlux(object):
         rhoVelocity.SetNumberOfTuples(self.nedges)
         rhoVelocity.SetName('rho_velocity')
         vxyz = numpy.zeros((self.nedges, 3), numpy.float64)
-        vxyz[:, 0] = self.xEdge
-        vxyz[:, 1] = self.yEdge
-        rhoVelocity.SetZVoidArray(vxyz, 3*self.nedge, 1)
+        rhoVelocity.SetVoidArray(vxyz, 3*self.nedges, 1)
         pointMesh.GetPointData().AddArray(rhoVelocity)
+
+        extra_dims = self.rho_u_dz.shape[:-1]
+        mai = mint.MultiArrayIter(extra_dims)
+        mai.begin()
+        for _ in range(mai.getNumIters()):
+            inds = tuple(mai.getIndices())
+            slab = inds + (slice(None, None),)
+            vxyz[:, 0] = self.rho_u_dz[slab]
+            vxyz[:, 1] = self.rho_v_dz[slab]
+            fn = fileName.split('.')[0] + '_'.join([f'{idx}' for idx in inds]) + '.vtk'
+            pointMeshWriter.SetFileName(fn)
+            pointMeshWriter.Update()
 
 
     def computeFlow(self, xy):
@@ -75,12 +87,12 @@ class LFRicFlux(object):
         pli = mint.PolylineIntegral()
         pli.setGrid(self.grid)
         pli.buildLocator(numCellsPerBucket=128, periodX=360., enableFolding=True)
-        xyz = numpy.arrray([(p[0], p[1], 0.) for p in xy])
+        xyz = numpy.array([(p[0], p[1], 0.) for p in xy])
         pli.computeWeights(xyz)
 
         extraDims = self.rho_u_dz.shape[:-1]
         mai = mint.MultiArrayIter(extraDims)
-        res = np.empty(extraDims, numpy.float64)
+        res = numpy.empty(extraDims, numpy.float64)
         for _ in range(mai.getNumIters()):
             inds = tuple(mai.getIndices())
             slab = inds + (slice(0, self.nedges),)

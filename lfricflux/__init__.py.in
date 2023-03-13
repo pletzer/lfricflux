@@ -2,6 +2,6 @@
 #__init__.py is automatically generated from __init__.py.in, DO NOT EDIT __init__.py
 #
 
-__all__ = ('lfricflux',)
+__all__ = ('flux',)
 
-from .lfricflux import LFRicFlux
+from .flux import LFRicFlux

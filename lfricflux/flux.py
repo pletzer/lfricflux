@@ -36,51 +36,12 @@ class LFRicFlux(object):
         self.yEdge = mint.NcFieldRead(fileName, f'{meshName}_edge_y').data()
 
 
+    def getFlows(self):
+        return self.rho_u_dz, self.rho_v_dz
 
-    def saveFlowVTK(self, fileName):
-        
-        import vtk
-        pointCoordArray = vtk.vtkDoubleArray()
-        pointCoordArray.SetNumberOfComponents(3)
-        pointCoordArray.SetNumberOfTuples(self.nedges)
-        pointCoords = vtk.vtkPoints()
-        pointMesh = vtk.vtkUnstructuredGrid()
-        pointMeshWriter = vtk.vtkUnstructuredGridWriter()
 
-        pointCoords.SetData(pointCoordArray)
-        pointMesh.SetPoints(pointCoords)
-        # unstructured grid is a cloud of points
-        pointMesh.AllocateExact(self.nedges, 1)
-        pointMeshWriter.SetInputData(pointMesh)
-
-        ptIds = vtk.vtkIdList()
-        ptIds.SetNumberOfIds(1)
-        for i in range(self.nedges):
-            pointCoordArray.SetTuple(i, (self.xEdge[i], self.yEdge[i], 0.))
-            ptIds.SetId(0, i)
-            pointMesh.InsertNextCell(vtk.VTK_VERTEX, ptIds)
-
-        # need to attach the u, v fields
-        rhoVelocity = vtk.vtkDoubleArray()
-        rhoVelocity.SetNumberOfComponents(3)
-        rhoVelocity.SetNumberOfTuples(self.nedges)
-        rhoVelocity.SetName('rho_velocity')
-        vxyz = numpy.zeros((self.nedges, 3), numpy.float64)
-        rhoVelocity.SetVoidArray(vxyz, 3*self.nedges, 1)
-        pointMesh.GetPointData().AddArray(rhoVelocity)
-
-        extra_dims = self.rho_u_dz.shape[:-1]
-        mai = mint.MultiArrayIter(extra_dims)
-        mai.begin()
-        for _ in range(mai.getNumIters()):
-            inds = tuple(mai.getIndices())
-            slab = inds + (slice(None, None),)
-            vxyz[:, 0] = self.rho_u_dz[slab]
-            vxyz[:, 1] = self.rho_v_dz[slab]
-            fn = fileName.split('.')[0] + '_' + '_'.join([f'{idx}' for idx in inds]) + '.vtk'
-            pointMeshWriter.SetFileName(fn)
-            pointMeshWriter.Update()
-            mai.next()
+    def getEdgeLonLat(self):
+        return self.xEdge, self.yEdge
 
 
     def computeFlow(self, xy):
@@ -101,3 +62,5 @@ class LFRicFlux(object):
             mai.next()
 
         return res
+
+

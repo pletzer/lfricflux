@@ -11,7 +11,7 @@ def test1():
     flow = lf.computeFlow(xy=[(0., -90.), (0., 90.)])
 
     x, y = lf.getEdgeLonLat()
-    vc = lfricflux.VtkVectors(x, y)
+    vc = lfricflux.VtkVectors(x=x, y=y, vector_field_name='horiz_flow')
 
     rho_u_dz, rho_v_dz = lf.getFlows()
     extra_dims = rho_u_dz.shape[:-1]

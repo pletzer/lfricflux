@@ -15,7 +15,7 @@ class LFRicFlux(object):
         uName = cfg['velocity']['u']
         vName = cfg['velocity']['v']
         rhoName = cfg['density']['name']
-        dz = float(cfg['vertical.axis']['dz'])
+        zName = cfg['vertical.axis']['name']
         
         # build the mesh
         self.grid = mint.Grid()
@@ -26,25 +26,33 @@ class LFRicFlux(object):
         self.u = mint.NcFieldRead(inputFile, uName).data()
         self.v = mint.NcFieldRead(inputFile, vName).data()
 
-        # read the cell centred density 
-        rho_w3 = mint.NcFieldRead(inputFile, rhoName).data()
-
         # compute the density one edges
         edge2face = numpy.array(mint.NcFieldRead(inputFile, f'{meshName}_edge_face_links').data(), dtype=int)
         # number of edges is assumed to be the last dimension
         self.nedges = self.u.shape[-1]
+
+        # read the cell centred fields
+        z_w3 = mint.NcFieldRead(inputFile, zName).data()
+        rho_w3 = mint.NcFieldRead(inputFile, rhoName).data()
+
         self.rho_edge = numpy.empty(rho_w3.shape[:-1] + (self.nedges,), numpy.float64)
+        self.z_edge = numpy.empty(z_w3.shape[:-1] + (self.nedges,), numpy.float64)
+
+
         for i in range(self.nedges):
             faceid1, faceid2 = edge2face[i,:]
             self.rho_edge[..., i] = 0.5*(rho_w3[..., faceid1] + rho_w3[..., faceid2])
+            self.z_edge[..., i] = 0.5*(z_w3[..., faceid1] + z_w3[..., faceid2])
 
         # flow across edges
+        dz = self.z_edge[:, 1:, :] - self.z_edge[:, :-1, :]
         self.rho_u_dz = self.rho_edge * self.u * dz
         self.rho_v_dz = self.rho_edge * self.v * dz
 
         # store the locations of the mid-edge positions
         self.xEdge = mint.NcFieldRead(inputFile, f'{meshName}_edge_x').data()
         self.yEdge = mint.NcFieldRead(inputFile, f'{meshName}_edge_y').data()
+
 
 
     def getFlows(self):

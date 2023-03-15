@@ -7,7 +7,7 @@ DATA_DIR = Path(__file__).absolute().parent.parent / Path('data')
 
 def test1():
 
-    fn = str(DATA_DIR / 'gungho' / 'uniform_extrusion' / 'lfric_diag.nc')
+    fn = str(DATA_DIR / 'gungho' / 'original' / 'lfric_diag.nc')
     cf = str(TESTS_DIR/ 'tests.cfg')
 
     lf = lfricflux.LFRicFlux(configFile=cf, inputFile=fn)

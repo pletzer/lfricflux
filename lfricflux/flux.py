@@ -11,14 +11,11 @@ class LFRicFlux(object):
         cfg = ConfigParser()
         cfg.read(configFile)
 
-        fields = cfg['field.names']
-        meshName = fields['mesh']
-        uName = fields['u']
-        vName = fields['v']
-        rhoName = fields['rho']
-
+        meshName = cfg['mesh']['name']
+        uName = cfg['velocity']['u']
+        vName = cfg['velocity']['v']
+        rhoName = cfg['density']['name']
         dz = float(cfg['vertical.axis']['dz'])
-
         
         # build the mesh
         self.grid = mint.Grid()

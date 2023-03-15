@@ -2,13 +2,13 @@ from pathlib import Path
 import lfricflux
 import mint
 
-TESTS_DIR = Path(__file__).absolute().parent.parent / Path('tests')
+CONFIGS_DIR = Path(__file__).absolute().parent.parent / Path('configs')
 DATA_DIR = Path(__file__).absolute().parent.parent / Path('data')
 
 def test1():
 
     fn = str(DATA_DIR / 'gungho' / 'original' / 'lfric_diag.nc')
-    cf = str(TESTS_DIR/ 'tests.cfg')
+    cf = str(CONFIGS_DIR/ 'lfric.cfg')
 
     lf = lfricflux.LFRicFlux(configFile=cf, inputFile=fn)
 

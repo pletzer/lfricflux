@@ -1,25 +1,39 @@
 import mint
 import numpy
+from configparser import ConfigParser
 
 class LFRicFlux(object):
 
 
-    def __init__(self, fileName, meshName, uName='u_in_w2h', vName='v_in_w2h', rhoName='rho', dz=1000.0):
+    def __init__(self, configFile: str, inputFile: str):
+
+
+        cfg = ConfigParser()
+        cfg.read(configFile)
+
+        fields = cfg['field.names']
+        meshName = fields['mesh']
+        uName = fields['u']
+        vName = fields['v']
+        rhoName = fields['rho']
+
+        dz = float(cfg['vertical.axis']['dz'])
+
         
         # build the mesh
         self.grid = mint.Grid()
         self.grid.setFlags(1, 1, 1)
-        self.grid.loadFromUgrid2DFile(f'{fileName}${meshName}')
+        self.grid.loadFromUgrid2DFile(f'{inputFile}${meshName}')
 
         # read the velocity fields on edges
-        self.u = mint.NcFieldRead(fileName, uName).data()
-        self.v = mint.NcFieldRead(fileName, vName).data()
+        self.u = mint.NcFieldRead(inputFile, uName).data()
+        self.v = mint.NcFieldRead(inputFile, vName).data()
 
         # read the cell centred density 
-        rho_w3 = mint.NcFieldRead(fileName, rhoName).data()
+        rho_w3 = mint.NcFieldRead(inputFile, rhoName).data()
 
         # compute the density one edges
-        edge2face = numpy.array(mint.NcFieldRead(fileName, f'{meshName}_edge_face_links').data(), dtype=int)
+        edge2face = numpy.array(mint.NcFieldRead(inputFile, f'{meshName}_edge_face_links').data(), dtype=int)
         # number of edges is assumed to be the last dimension
         self.nedges = self.u.shape[-1]
         self.rho_edge = numpy.empty(rho_w3.shape[:-1] + (self.nedges,), numpy.float64)
@@ -32,8 +46,8 @@ class LFRicFlux(object):
         self.rho_v_dz = self.rho_edge * self.v * dz
 
         # store the locations of the mid-edge positions
-        self.xEdge = mint.NcFieldRead(fileName, f'{meshName}_edge_x').data()
-        self.yEdge = mint.NcFieldRead(fileName, f'{meshName}_edge_y').data()
+        self.xEdge = mint.NcFieldRead(inputFile, f'{meshName}_edge_x').data()
+        self.yEdge = mint.NcFieldRead(inputFile, f'{meshName}_edge_y').data()
 
 
     def getFlows(self):

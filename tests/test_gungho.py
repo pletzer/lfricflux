@@ -2,12 +2,16 @@ from pathlib import Path
 import lfricflux
 import mint
 
+TESTS_DIR = Path(__file__).absolute().parent.parent / Path('tests')
 DATA_DIR = Path(__file__).absolute().parent.parent / Path('data')
 
 def test1():
-    fn = str(DATA_DIR/ 'gungho' / 'uniform_extrusion' / 'lfric_diag.nc')
-    mesh = 'Mesh2d'
-    lf = lfricflux.LFRicFlux(fileName=fn, meshName=mesh,)
+
+    fn = str(DATA_DIR / 'gungho' / 'uniform_extrusion' / 'lfric_diag.nc')
+    cf = str(TESTS_DIR/ 'tests.cfg')
+
+    lf = lfricflux.LFRicFlux(configFile=cf, inputFile=fn)
+
     flow = lf.computeFlow(xy=[(0., -90.), (0., 90.)])
 
     x, y = lf.getEdgeLonLat()

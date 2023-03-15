@@ -64,10 +64,17 @@ class VtkVectors(object):
         return self.pointMesh
 
 
-    def setField(self, u_east, v_north, inds):
+    def setField(self, u_east, v_north):
+        self.uEast = u_east
+        self.vNorth = v_north
+
+
+    def setSlice(self, inds):
 
         slab = inds + (slice(None, None),)
-        u, v = u_east[slab], v_north[slab]
+        u = self.uEast[slab]
+        v = self.vNorth[slab]
+
         if self.cartesian:
             # in cartesian
             cos_the = numpy.cos(self.y * numpy.pi/180.)
@@ -91,12 +98,12 @@ class VtkVectors(object):
         return self.vxyz
 
 
-    def save(self, fileName, vx, vy, inds):
+    def save(self, fileName, inds):
 
         writer = vtk.vtkUnstructuredGridWriter()
         fn = fileName.split('.')[0] + '_' + '_'.join([f'{idx}' for idx in inds]) + '.vtk'
         writer.SetFileName(fn)
         writer.SetInputData(self.pointMesh)
-        self.setField(vx, vy, inds)
+        self.setSlice(inds)
         writer.Update()
 

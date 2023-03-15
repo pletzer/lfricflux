@@ -18,11 +18,13 @@ def test1():
     vc = lfricflux.VtkVectors(x=x, y=y, vector_field_name='horiz_flow', cartesian=True)
 
     rho_u_dz, rho_v_dz = lf.getFlows()
+    vc.setField(rho_u_dz, rho_v_dz)
+
     extra_dims = rho_u_dz.shape[:-1]
     mai = mint.MultiArrayIter(extra_dims)
     mai.begin()
     for _ in range(mai.getNumIters()):
         inds = tuple(mai.getIndices())
-        vc.save('flow.vtk', rho_u_dz, rho_v_dz, inds)
+        vc.save('flow.vtk', inds)
         mai.next()
 

@@ -22,7 +22,7 @@ class VtkVectors(object):
         self.vectorField.SetName(vector_field_name)
         self.vxyz = numpy.zeros((self.nedges, 3), numpy.float64)
         self.vectorField.SetVoidArray(self.vxyz, 3*self.nedges, 1)
-        self.pointMesh.GetPointData().AddArray(self.vectorField)
+        self.pointMesh.GetPointData().SetVectors(self.vectorField)
 
 
     def _buildMesh(self):

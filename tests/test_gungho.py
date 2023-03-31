@@ -20,11 +20,17 @@ def test1():
     rho_u_dz, rho_v_dz = lf.getFlows()
     vc.setField(rho_u_dz, rho_v_dz)
 
+    # check build of target surface
+    lf.buildFluxSurface(extrusion=0.1, cartesian=True, radius=1.0)
+
     extra_dims = rho_u_dz.shape[:-1]
     mai = mint.MultiArrayIter(extra_dims)
     mai.begin()
     for _ in range(mai.getNumIters()):
         inds = tuple(mai.getIndices())
-        vc.save('flow.vtk', inds)
+        vc.save('vecctors.vtk', inds)
+        lf.save('flow.vtk', inds)
         mai.next()
+
+
 

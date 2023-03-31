@@ -149,7 +149,9 @@ class LFRicFlux(object):
         # unit normals to the sphere
         n0 = numpy.zeros((3,), numpy.float64)
         n1 = numpy.zeros((3,), numpy.float64)
-        for i in range(npts - 1):
+        for i in range(ncells):
+
+            # insert the quad
             ptIds.SetId(0, i)
             ptIds.SetId(1, i + 1)
             ptIds.SetId(2, i + 1 + npts)
@@ -167,7 +169,7 @@ class LFRicFlux(object):
             rho = numpy.cos(the)
             n1[:] = rho*numpy.cos(lam), rho*numpy.sin(lam), numpy.sin(the)
             
-            dAngle = n0.dot(n1)
+            dAngle = numpy.arccos(n0.dot(n1))
             segLength = radius * dAngle
             self.targetSegmentLength.SetTuple(i, (segLength,))
 

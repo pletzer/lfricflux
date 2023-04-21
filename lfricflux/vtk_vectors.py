@@ -107,3 +107,7 @@ class VtkVectors(object):
         self.setSlice(inds)
         writer.Update()
 
+
+    def getNumEdges(self):
+        return self.nedges        
+

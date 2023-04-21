@@ -28,7 +28,7 @@ def test1():
     mai.begin()
     for _ in range(mai.getNumIters()):
         inds = tuple(mai.getIndices())
-        vc.save('vecctors.vtk', inds)
+        vc.save('vectors.vtk', inds)
         lf.save('flow.vtk', inds)
         mai.next()
 

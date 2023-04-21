@@ -80,9 +80,9 @@ class LFRicFlux(object):
         xyz[:, :2] = xya
         pli.computeWeights(xyz)
 
-        extraDims = self.rho_u_dz.shape[:-1]
-        mai = mint.MultiArrayIter(extraDims)
-        self.flux = numpy.empty(extraDims, numpy.float64)
+        self.extraDims = self.rho_u_dz.shape[:-1]
+        mai = mint.MultiArrayIter(self.extraDims)
+        self.flux = numpy.empty(self.extraDims, numpy.float64)
         for _ in range(mai.getNumIters()):
             inds = tuple(mai.getIndices())
             slab = inds + (slice(0, self.nedges),)
@@ -95,63 +95,90 @@ class LFRicFlux(object):
     def buildFluxSurface(self, extrusion=0.1, cartesian=False, radius=1.0):
         
         npts = len(self.targetLats)
-        n = npts * 2 # factor 2 because of extrusion
+
+        # number of target points with extrusion
+        n = npts * 2
+
+        # number of target cells
         ncells = npts - 1
 
+        # flux attached to each extruded, target cell
         self.targetFlux = vtk.vtkDoubleArray()
         self.targetFlux.SetNumberOfComponents(1)
         self.targetFlux.SetNumberOfTuples(ncells)
         self.targetFlux.SetName("flux")
 
+        # target segment lengths, one per tagget cell
         self.targetSegmentLength = vtk.vtkDoubleArray()
         self.targetSegmentLength.SetNumberOfComponents(1)
         self.targetSegmentLength.SetNumberOfTuples(ncells)
         self.targetSegmentLength.SetName("length")
 
-        self.targetGrid = vtk.vtkUnstructuredGrid()
+        # lateral area coordinates and points
         self.targetPointData = vtk.vtkDoubleArray()
         self.targetPoints = vtk.vtkPoints()
 
+        # lateral areas grid
+        self.targetGrid = vtk.vtkUnstructuredGrid()
+        self.targetGrid.SetPoints(self.targetPoints)
+
+
         # set the target points
         self.targetPointArray = numpy.empty((n, 3), numpy.float64)
-
         self.targetPointData.SetNumberOfComponents(3)
         self.targetPointData.SetNumberOfTuples(n)
+        self.targetPointData.SetVoidArray(self.targetPointArray, n*3, 1)
+        self.targetPoints.SetData(self.targetPointData)
 
         if cartesian:
+
+            # lon in rad
             lam = self.targetLons * numpy.pi / 180.
+
+            # lat in rad
             the = self.targetLats * numpy.pi / 180.
+
+            # projection onto the (x, y) plane
             rho = numpy.cos(the)
+
+            # inner/outer radii 
             r0 = radius
-            r1 = r0*(1. + extrusion)
+
+            # the first npts points are on the inner radius
             self.targetPointArray[:npts, 0] = r0*rho*numpy.cos(lam)
             self.targetPointArray[:npts, 1] = r0*rho*numpy.sin(lam)
             self.targetPointArray[:npts, 2] = r0*numpy.sin(the)
-            self.targetPointArray[npts:, 0] = r1*rho*numpy.cos(lam)
-            self.targetPointArray[npts:, 1] = r1*rho*numpy.sin(lam)
-            self.targetPointArray[npts:, 2] = r1*numpy.sin(the)
+
+            # the last npts points are on the outer radius
+            for i in range(3): # x, y, z
+                self.targetPointArray[npts:, i] = (1. + extrusion)*self.targetPointArray[:npts, i]
+
         else:
+
+            # spherical
+
             self.targetPointArray[:npts, 0] = self.targetLons
             self.targetPointArray[:npts, 1] = self.targetLats
             self.targetPointArray[:npts, 2] = 0.0
+
             self.targetPointArray[npts:, 0] = self.targetLons
             self.targetPointArray[npts:, 1] = self.targetLats
             self.targetPointArray[npts:, 2] = extrusion
 
-        self.targetPointData.SetVoidArray(self.targetPointArray, n*3, 1)
-        self.targetPoints.SetData(self.targetPointData)
-        self.targetGrid.SetPoints(self.targetPoints)
+        # build connectivity
 
-        # connectivity
         self.targetGrid.AllocateExact(ncells, 4)
         ptIds = vtk.vtkIdList()
+
+        # quads
         ptIds.SetNumberOfIds(4)
+
         # unit normals to the sphere
         n0 = numpy.zeros((3,), numpy.float64)
         n1 = numpy.zeros((3,), numpy.float64)
         for i in range(ncells):
 
-            # insert the quad
+            # insert the quad, area points outwards
             ptIds.SetId(0, i)
             ptIds.SetId(1, i + 1)
             ptIds.SetId(2, i + 1 + npts)
@@ -193,4 +220,11 @@ class LFRicFlux(object):
         writer.SetInputData(self.targetGrid)
         self.setSlice(inds)
         writer.Update()
+
+
+    def getExtraDims(self):
+        return self.extraDims
+
+
+
 

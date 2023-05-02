@@ -209,7 +209,10 @@ class LFRicFlux(object):
 
         slab = inds + (slice(None, None),)
         n = self.targetFlux.GetNumberOfTuples()
-        self.targetFlux.SetVoidArray(self.flux[inds], n, 1)
+        # the same flux value is applied to all the elements
+        fluxVal = self.flux[inds]
+        for j in range(self.targetFlux.GetNumberOfTuples()):
+            self.targetFlux.SetTuple(j, (fluxVal,))
 
 
     def save(self, fileName, inds):

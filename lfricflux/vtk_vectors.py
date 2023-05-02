@@ -65,8 +65,19 @@ class VtkVectors(object):
 
 
     def setField(self, u_east, v_north):
+        """
+        Sets field array for all times, elevations, etc.
+        """
         self.uEast = u_east
         self.vNorth = v_north
+
+
+    def setFieldArray(self, uv):
+        """
+        Sets field array for all times, elevations, etc.
+        """
+        self.uEast = uv[:, 0]
+        self.vNorth = uv[:, 1]
 
 
     def setSlice(self, inds):
